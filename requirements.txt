@@ -1,0 +1,5 @@
+transformers
+pyyaml # for yaml config usage
+
+#
+torch
