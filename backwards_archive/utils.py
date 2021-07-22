@@ -1,10 +1,14 @@
 import json
 import torch
 import torch.nn.functional as F
+import numpy as np
 
 SMALL_CONST = 1e-15
 BIG_CONST = 1e10
 
+
+def reverse_ids(input_ids, device):
+    return torch.from_numpy(np.array(input_ids.tolist()[0][::-1])).unsqueeze(0).to(device)
 
 def reverse_text(text):
     return ' '.join(reversed(text.split()))

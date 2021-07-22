@@ -1,17 +1,24 @@
 from dataclasses import dataclass
-
+from transformers import AutoTokenizer, AutoModel
 from transformers import GPT2LMHeadModel, GPT2Tokenizer, LogitsProcessorList, StoppingCriteriaList
 import torch
 import torch.nn.functional as F
 import numpy as np
 from config import ModelConfig, DataConfig, GenerationSpecConfig
-from utils import load_dataset, reverse_text
+from utils import load_dataset, reverse_text, reverse_ids
 
+
+def mean_pooling(model_output, attention_mask):
+    token_embeddings = model_output #First element of model_output contains all token embeddings
+    input_mask_expanded = attention_mask.unsqueeze(-1).expand(token_embeddings.size()).float()
+    sum_embeddings = torch.sum(token_embeddings * input_mask_expanded, 1)
+    sum_mask = torch.clamp(input_mask_expanded.sum(1), min=1e-9)
+    return sum_embeddings / sum_mask
 
 def decoder_to_text(output_sequences, tokenizer, input_ids, prompt_text="", reverse=False):
     stop_token = None
     if reverse:
-        prompt_text = reverse_text(prompt_text)
+        output_sequences = [torch.from_numpy(np.array(x.tolist()[::-1])) for x in output_sequences]
 
     generated_sequences = []
     for generated_sequence_idx, generated_sequence in enumerate(output_sequences):
@@ -26,17 +33,17 @@ def decoder_to_text(output_sequences, tokenizer, input_ids, prompt_text="", reve
 
         # Add the prompt at the beginning of the sequence. Remove the excess text that was used for pre-processing
         if reverse:
-            reversed_text = reverse_text(text[len(tokenizer.decode(input_ids[0], clean_up_tokenization_spaces=True)):])
-            total_sequence = (
-                     reversed_text + prompt_text
-            )
+            total_sequence = text[len(tokenizer.decode(input_ids[0], clean_up_tokenization_spaces=True)):]
         else:
-            total_sequence = (
-                    prompt_text + text[len(tokenizer.decode(input_ids[0], clean_up_tokenization_spaces=True)):]
-            )
+            # total_sequence = (
+            #         prompt_text + text[len(tokenizer.decode(input_ids[0], clean_up_tokenization_spaces=True)):]
+            # )
+            total_sequence = text[len(tokenizer.decode(input_ids[0], clean_up_tokenization_spaces=True)):]
 
         generated_sequences.append(total_sequence)
         print(total_sequence)
+
+    return generated_sequences
 
 
 def backward_logits(model,
@@ -80,8 +87,8 @@ def backward_logits(model,
 
         # sample
         probs = F.softmax(next_token_scores, dim=-1)
-
         next_tokens = torch.multinomial(probs, num_samples=1).squeeze(1)
+
 
         # add code that transforms next_tokens to tokens_to_add
         if eos_token_id is not None:
@@ -115,9 +122,93 @@ def backward_logits(model,
     return input_ids, backward_logits
 
 
+def backward_logits_from_forward_model(model,
+                                      input_ids,
+                                      logits_processor,
+                                      logits_warper,
+                                      stopping_criteria,
+                                      max_length,
+                                      pad_token_id,
+                                      eos_token_id,
+                                      model_kwargs):
+    logits_processor = logits_processor if logits_processor is not None else LogitsProcessorList()
+    stopping_criteria = stopping_criteria if stopping_criteria is not None else StoppingCriteriaList()
+    max_length = max_length if max_length is not None else model.config.max_length
+    logits_warper = logits_warper if logits_warper is not None else LogitsProcessorList()
+    pad_token_id = pad_token_id if pad_token_id is not None else model.config.pad_token_id
+    eos_token_id = eos_token_id if eos_token_id is not None else model.config.eos_token_id
+
+    # init sequence length tensors
+    sequence_lengths, unfinished_sequences, cur_len = model._init_sequence_length_for_generation(
+        input_ids, max_length
+    )
+    scores = None
+
+    i = 0
+    backward_logits = []
+    while cur_len < max_length:
+        # prepare model inputs
+        model_inputs = model.prepare_inputs_for_generation(input_ids)
+
+        # forward pass to get next token
+        outputs = model(
+            **model_inputs,
+            return_dict=True
+        )
+        next_token_logits = outputs.logits[:, -1, :]
+
+
+        backward_logits.append(next_token_logits)
+
+        # pre-process distribution
+        next_token_scores = logits_processor(input_ids, next_token_logits)
+        #next_token_scores = logits_warper(input_ids, next_token_scores)
+
+
+        # sample
+        probs = F.softmax(next_token_scores, dim=-1)
+        next_tokens = torch.multinomial(probs, num_samples=1).squeeze(1)
+        #next_tokens = torch.argmax(next_token_scores, dim=-1)
+
+        # add code that transforms next_tokens to tokens_to_add
+        if eos_token_id is not None:
+            assert pad_token_id is not None, "If eos_token_id is defined, make sure that pad_token_id is defined."
+            next_tokens = next_tokens * unfinished_sequences + pad_token_id * (1 - unfinished_sequences)
+
+        # add token and increase length by one
+        input_ids = torch.cat([input_ids, next_tokens[:, None]], dim=-1)
+        cur_len = cur_len + 1
+        i+=1
+        # update sequence length
+        if eos_token_id is not None:
+            sequence_lengths, unfinished_sequences = model._update_seq_length_for_generation(
+                sequence_lengths, unfinished_sequences, cur_len, next_tokens == eos_token_id
+            )
+
+        # stop when there is a </s> in each sentence, or if we exceed the maximum length
+        if unfinished_sequences.max() == 0:
+            break
+
+        if stopping_criteria(input_ids, scores):
+            break
+
+        # update model kwargs
+        model_kwargs = model._update_model_kwargs_for_generation(
+            outputs, model_kwargs, is_encoder_decoder=model.config.is_encoder_decoder
+        )
+
+
+    backward_logits = torch.stack(backward_logits, dim=1)
+
+    return input_ids, backward_logits
+
+
+
+
 def forward_sample(model,
                    input_ids,
                    backward_logits,
+                   backward_ids,
                    mix_rate,
                    logits_processor,
                    logits_warper,
@@ -139,6 +230,16 @@ def forward_sample(model,
     )
     scores = None
 
+
+
+    #Compute token embeddings
+    # with torch.no_grad():
+    #     model_output = model(**backward_ids, output_hidden_states=True)
+    #
+    # #Perform pooling. In this case, mean pooling
+    # sentence_embeddings = mean_pooling(model_output.hidden_states[-1], backward_ids['attention_mask'])
+    # sentence_logits = model.lm_head(sentence_embeddings.cuda())
+
     i = 0
     while cur_len < max_length:
         # prepare model inputs
@@ -152,7 +253,13 @@ def forward_sample(model,
         next_token_logits = outputs.logits[:, -1, :]
 
         if i < model_config.length:
-            perturbed_next_token_logits = mix_rate * next_token_logits + (1- mix_rate)* backward_logits[:, i, :]
+            #print(model_config.length-i-1)
+            #backward_logits[:, :, :]
+            #res = torch.mean(backward_logits, dim=1)
+            #perturbed_next_token_logits = next_token_logits + (1 - mix_rate) * res
+            #perturbed_next_token_logits = mix_rate * next_token_logits + (1 - mix_rate) * backward_logits[:, model_config.length-i-1, :]
+            perturbed_next_token_logits = mix_rate * next_token_logits + (1 - mix_rate) * backward_logits[:, i, :]
+            #perturbed_next_token_logits = mix_rate * next_token_logits + (1 - mix_rate) * sentence_logits
         else:
             perturbed_next_token_logits = next_token_logits
 
@@ -162,7 +269,6 @@ def forward_sample(model,
 
         # sample
         probs = F.softmax(next_token_scores, dim=-1)
-        np.save('abd.npy', probs.cpu().numpy())
 
         next_tokens = torch.multinomial(probs, num_samples=1).squeeze(1)
 
@@ -277,17 +383,15 @@ def generate_abductive_explanation(model_config,
     seed = 42
     np.random.seed(seed)
     torch.manual_seed(seed)
-
-    # prompt_text = "This is going to be"
-    # prompt_text = "belssing his for begging"
-    # input_ids = backward_tokenizer.encode(o1_text, add_special_tokens=False, return_tensors="pt").to('cuda:0')
-    o2_text = reverse_text(o2_text)
+    o2_text = o2_text.strip('.') + " because"
     input_ids = backward_tokenizer.encode(o2_text, add_special_tokens=False, return_tensors="pt").to('cuda:0')
+    #input_ids = reverse_ids(input_ids, device=model_config.device)
+
     length = 10
     repetition_penalty = 1.0
     num_return_sequences = 5
     stop_token = None
-    backward_generation_spec = prepare_model(backward_model,
+    backward_generation_spec = prepare_model(forward_model,
                                              input_ids,
                                              max_length=model_config.length + len(input_ids[0]),
                                              temperature=model_config.temperature_backward,
@@ -295,7 +399,7 @@ def generate_abductive_explanation(model_config,
                                              top_p=model_config.top_p_backward,
                                              num_return_sequences=num_return_sequences)
 
-    output_sequences, logits = backward_logits(backward_model,
+    output_sequences, logits = backward_logits_from_forward_model(forward_model,
                                                input_ids=backward_generation_spec.input_ids,
                                                logits_processor=backward_generation_spec.logits_processor,
                                                logits_warper=backward_generation_spec.logits_warper,
@@ -306,14 +410,19 @@ def generate_abductive_explanation(model_config,
                                                model_kwargs=backward_generation_spec.model_kwargs
                                                )
 
+    np.random.seed(seed)
+    torch.manual_seed(seed)
     print("BACKWARD TEXTS")
-    decoder_to_text(output_sequences, backward_tokenizer, backward_generation_spec.input_ids, prompt_text=o2_text, reverse=True)
-    #o2_text = "Ray was fine but his car was totaled."
+    generated_sequences = decoder_to_text(output_sequences, backward_tokenizer, backward_generation_spec.input_ids, prompt_text=o2_text)
+
+    forward_tokenizer.add_special_tokens({"pad_token": "[PAD]"})
+    generated_sequences_ids = forward_tokenizer(generated_sequences[0], padding=True, truncation=True, max_length=128, return_tensors="pt").to('cuda:0')
+
     input_ids = forward_tokenizer.encode(o1_text, add_special_tokens=False, return_tensors="pt").to('cuda:0')
 
     forward_generation_spec = prepare_model(forward_model,
                                             input_ids,
-                                            max_length=model_config.length + len(input_ids[0]),
+                                            max_length=model_config.max_length + len(input_ids[0]),
                                             temperature=model_config.temperature_forward,
                                             top_k=model_config.top_k_forward,
                                             top_p=model_config.top_p_forward,
@@ -324,6 +433,7 @@ def generate_abductive_explanation(model_config,
         forward_model,
         forward_generation_spec.input_ids,
         backward_logits=logits,
+        backward_ids=generated_sequences_ids,
         mix_rate=model_config.mix_rate,
         logits_processor=forward_generation_spec.logits_processor,
         logits_warper=forward_generation_spec.logits_warper,
@@ -336,9 +446,10 @@ def generate_abductive_explanation(model_config,
     print("FORWARD TEXTS")
     decoder_to_text(output_sequences,
                     forward_tokenizer,
-                    forward_generation_spec.input_ids, prompt_text=o1_text)
+                    forward_generation_spec.input_ids,
+                    prompt_text=o1_text)
 
-    return
+    return ""
 
 
 if __name__ == '__main__':
@@ -367,8 +478,8 @@ if __name__ == '__main__':
     print(records)
 
     for r in records:
-        o1_text = r['obs1']#'<|endoftext|>'.join([r['obs2'], r['obs1']])
-        o2_text = r['obs2']
+        o1_text = r['obs1']#' '.join([r['obs2'], r['obs1']])##'<|endoftext|>'.join([r['obs2'], r['obs1']])
+        o2_text = ' '.join([r['obs1'], r['obs2']]) #r['obs2']
 
         text = generate_abductive_explanation(model_config,
                                               forward_model,

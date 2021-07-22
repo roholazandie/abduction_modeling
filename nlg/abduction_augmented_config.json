@@ -1,0 +1,15 @@
+{
+  "model_checkpoint": "gpt2",
+  "dataset_name": "/home/rohola/codes/abduction_modeling/data/selected_augmented_dataset",
+  "checkpoint_dir": "abduction_aug_checkpoints/checkpoint-3310/",
+  "batch_size": 16,
+  "batch_update": 16,
+  "learning_rate": 5e-4,
+  "max_sequence_length": 128,
+  "num_train_epochs": 5,
+  "weight_decay": 0.01,
+  "apex_opt_level": "O1",
+  "warmup_steps": 1e2,
+  "num_unfreeze_last_layers": 6,
+  "device": "cuda:0"
+}
