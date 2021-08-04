@@ -2,7 +2,7 @@
 
 ### 1. create the dataset
 You first need to add the Comet2020 common sense relations. 
-
+You need to [download](https://storage.googleapis.com/ai2-mosaic-public/projects/mosaic-kgs/comet-atomic_2020_BART.zip) the model and set the comet_model_path to it.
 ```
 python atomic_augmentation/create_augmented_dataset.py --comet_model_path <path to comet model> --save_dataset_path <path to dictionary>
 ```
@@ -28,4 +28,16 @@ Finally, after training you can generate abducgive explanations using:
 you need to check the checkpoint path in abduction_augmented_config.json:
 ```
 python nlg/abductive_augmenetd_generation.py
+```
+
+
+#### paths aquarius
+
+dataset_name
+```
+/media/sdb4Tb/rohola_data/filtered_abduction_augmented_dataset
+```
+checkpoint
+```
+/media/sdb4Tb/rohola_data/abduction_aug_generation_checkpoint
 ```

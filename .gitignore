@@ -160,3 +160,4 @@ caches/*
 wandb/*
 
 *.html
+/checkpoints/

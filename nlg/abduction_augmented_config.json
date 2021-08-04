@@ -1,7 +1,7 @@
 {
   "model_checkpoint": "gpt2",
-  "dataset_name": "/media/sdc/rohola_data/abduction_augmented_dataset",
-  "checkpoint_dir": "/media/sdc/rohola_data/abduction_checkpoints/abduction_aug_generation_checkpoint",
+  "dataset_name": "/home/rohola/codes/abduction_modeling/data/selected_aug_dataset",
+  "checkpoint_dir": "/home/rohola/codes/abduction_modeling/checkpoints/gpt2checkpoints/",
   "batch_size": 16,
   "batch_update": 16,
   "learning_rate": 5e-4,

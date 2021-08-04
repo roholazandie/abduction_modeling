@@ -1,9 +1,10 @@
 import os
 from datasets import load_dataset, DatasetDict
 from transformers.modeling_outputs import MultipleChoiceModelOutput
+from transformers import GPTNeoForCausalLM, GPT2Tokenizer
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 from datasets import load_dataset
 
@@ -20,8 +21,8 @@ SPECIAL_TOKENS = {'pad_token': '[PAD]',
 params = ModelConfig.from_json("abduction_augmented_config.json")
 
 
-def compute_metrics(eval_preds):
-    print(eval_preds)
+# def compute_metrics(eval_preds):
+#     print(eval_preds)
 
 
 def preprocess_function(examples):
@@ -82,29 +83,48 @@ def preprocess_function(examples):
 
 dataset = DatasetDict.load_from_disk(params.dataset_name)
 
-tokenizer = AutoTokenizer.from_pretrained(params.model_checkpoint, use_fast=True)
+#tokenizer = AutoTokenizer.from_pretrained(params.model_checkpoint, use_fast=True)
+#model = AutoModelForPreTraining.from_pretrained(params.model_checkpoint).to(params.device)
+
+model = GPTNeoForCausalLM.from_pretrained("EleutherAI/gpt-neo-1.3B")#.to(params.device)
+tokenizer = GPT2Tokenizer.from_pretrained("EleutherAI/gpt-neo-1.3B")
+
 tokenizer.add_special_tokens(SPECIAL_TOKENS)
 encoded_dataset = dataset.map(preprocess_function)  # , batched=True)
 
-model = AutoModelForPreTraining.from_pretrained(params.model_checkpoint).to(params.device)
+
 model.resize_token_embeddings(len(tokenizer))
-# model = freeze_lower_layers(model, params.num_unfreeze_last_layers)
 
 
 args = TrainingArguments(
     params.checkpoint_dir,
-    evaluation_strategy="epoch",
-    learning_rate=params.learning_rate,
     per_device_train_batch_size=params.batch_size,
     per_device_eval_batch_size=params.batch_size,
-    gradient_accumulation_steps=params.batch_update,
     num_train_epochs=params.num_train_epochs,
-    weight_decay=params.weight_decay,
-    load_best_model_at_end=True,
-    fp16=True,
-    fp16_opt_level=params.apex_opt_level,
-    warmup_steps=params.warmup_steps,
+    weight_decay=0.01,
+    warmup_steps=100,
+    logging_dir="/media/sdb4Tb/rohola_data",
+    logging_steps=5000,
+    save_steps=5000,
 )
+
+
+
+# args = TrainingArguments(
+#     params.checkpoint_dir,
+#     evaluation_strategy="epoch",
+#     save_strategy="epoch",
+#     learning_rate=params.learning_rate,
+#     per_device_train_batch_size=params.batch_size,
+#     per_device_eval_batch_size=params.batch_size,
+#     gradient_accumulation_steps=params.batch_update,
+#     num_train_epochs=params.num_train_epochs,
+#     weight_decay=params.weight_decay,
+#     load_best_model_at_end=True,
+#     fp16=True,
+#     fp16_opt_level=params.apex_opt_level,
+#     warmup_steps=params.warmup_steps,
+# )
 
 trainer = Trainer(
     model,
@@ -112,7 +132,7 @@ trainer = Trainer(
     train_dataset=encoded_dataset["train"],
     eval_dataset=encoded_dataset["validation"],
     tokenizer=tokenizer,
-    compute_metrics=compute_metrics
+    #compute_metrics=compute_metrics
 )
 
 trainer.train()

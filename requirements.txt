@@ -1,5 +1,5 @@
 transformers
 pyyaml # for yaml config usage
-
+datasets
 #
 torch
