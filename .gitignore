@@ -158,5 +158,3 @@ backwards_archive/configs/*
 results/*
 caches/*
 wandb/*
-
-*.html
