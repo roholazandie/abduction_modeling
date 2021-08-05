@@ -4,7 +4,10 @@
 <crowd-entity-annotation
   name="Abduction Reasoning Model Evaluation"
   header="Mention the generated hypotheses that match the actual hypothesis between Observation 1 and Observation 2"
-  labels="[{'label': 'Observation 1', 'shortDisplayName': 'o1', 'fullDisplayName': 'Observation 1'}]"
+  labels="[{'label': 'Observation 1', 'shortDisplayName': 'o1', 'fullDisplayName': 'Observation 1'},
+           {'label': 'Observation 2', 'shortDisplayName': 'o2', 'fullDisplayName': 'Observation 2'},
+           {'label': 'List of Generated Hypotheses', 'shortDisplayName': 'gh', 'fullDisplayName': 'List of Generated Hypotheses separated by a period'},
+           {'label': 'Actual Hypothesis', 'shortDisplayName': 'ah', 'fullDisplayName': 'Actual Hypothesis'}]"
   text="${OBSERVATION_1}, ${OBSERVATION_2}, ${GENERATED_HYPOTHESES}, ${ACTUAL_HYPOTHESIS}"
 >
   <full-instructions header="Labeling Instructions">
