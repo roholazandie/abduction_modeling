@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv='Content-Type' content='text/html; charset=UTF-8'/>
+<script type='text/javascript' src='https://s3.amazonaws.com/mturk-public/externalHIT_v1.js'></script>
+</head>
+<body>
+<form name='mturk_form' method='post' id='mturk_form' action='https://www.mturk.com/mturk/externalSubmit'><input type='hidden' value='' name='assignmentId' id='assignmentId'/>
+<h2>Abduction Modeling Human Evaluation </h2>
+<p>
+    We would like to evaluate a machine learning model's ability to reason based on common sense.
+    More specifically, we would like to see how accurately a model is able to generate a hypothesis of an event that
+    can reasonably occur between two observations - Observation 1 and Observation 2.
+
+    The model has generated a maximum of three hypotheses and we would like the mturk worker (human) to evaluate to
+    tell us which of those hypotheses can be a reasonable hypotheses based on the actual hypothesis.
+</p>
+<h3>Observation 1</h3>
+<p>{{ observation_1 }}</p>
+<h3>Observation 2</h3>
+<p>{{ observation_2 }}</p>
+<h3>Actual Hypothesis </h3>
+<p>{{ actual_hypothesis }}</p>
+<h3>Model Generated Hypotheses </h3>
+<ol>
+    <li>{{ generated_hypothesis_1 }}</li>
+    <li>{{ generated_hypothesis_2 }}</li>
+    <li>{{ generated_hypothesis_3 }}</li>
+</ol>
+    <div>
+    <h3>What do you think? Do the above model generated hypotheses make sense as compared to the actual hypothesis</h3>
+        <p>Type in your answer in the text box below. You need to strictly follow the format of your answer.</p>
+        <p>If all hypotheses make sense, type <b>1,2,3</b>.</p>
+        <p>If only one of the hypotheses make sense (say the third hypothesis), type <b>3</b>.</p>
+        <p>If two of the hypotheses make sense (say the second and third hypothesis), type <b>2,3</b>.</p>
+        <p>If none of the hypotheses make sense, type <b>0</b>.</p>
+
+
+
+  <input type='text' name='reported_evaluation' placeholder='Type in your answer here'>
+
+<p><input type='submit' id='submitButton' value='Submit' /></p>
+        </div>
+</form>
+<script language='Javascript'>turkSetAssignmentID();</script>
+</body>
+</html>
