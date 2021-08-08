@@ -3,7 +3,7 @@ import requests
 from jinja2 import Template
 
 BASE_DIR = Path(__file__).resolve().parent
-API_BASE_URL = "http://127.0.0.1:8000"
+API_BASE_URL = "http://127.0.0.1:8000/api"
 
 if __name__ == '__main__':
     with open(BASE_DIR.joinpath('htmls', 'question.html'), 'r') as fh:
