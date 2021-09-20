@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-from transformers import AutoTokenizer, AutoModelForPreTraining
+from transformers import AutoTokenizer, AutoModelForPreTraining, GPTNeoForCausalLM, GPT2Tokenizer
 from datasets import load_dataset, DatasetDict
 from config import ModelConfig
 from tqdm import tqdm
@@ -38,12 +38,20 @@ SPECIAL_TOKENS = {'pad_token': '[PAD]',
 tokenizer = AutoTokenizer.from_pretrained(params.checkpoint_dir)
 model = AutoModelForPreTraining.from_pretrained(params.checkpoint_dir)
 
+# tokenizer = GPT2Tokenizer.from_pretrained(params.checkpoint_dir)
+# model = GPTNeoForCausalLM.from_pretrained(params.checkpoint_dir)
+
+
 model.to(params.device)
 model.eval()
 
 dataset = DatasetDict.load_from_disk(params.dataset_name)
 
 all_bleus = []
+
+fw = open("results_test.csv", 'w')
+fw.write("observation1, observation1, generated hypothesis, real hypothesis\n")
+
 for example in dataset["validation"]:
     correct_hypothesis = example["hypothesis_"+str(example['label'])]
 
@@ -136,10 +144,14 @@ for example in dataset["validation"]:
 
     print(f"observation1: {observation_1}")
     print(f"observation2: {observation_2}")
-    print(f"generated hypthesis: {text[len(prompt_text):].replace('[PAD]', '')}")
-    print(f"real hypthesis: {correct_hypothesis}")
+    print(f"generated hypothesis: {text[len(prompt_text):].replace('[PAD]', '').split('.')[:3]}")
+    print(f"real hypothesis: {correct_hypothesis}")
     print("###################################")
 
+    generated_hypothesis = '. '.join(text[len(prompt_text):].replace('[PAD]', '').replace(',', '').split('.')[:3])
 
+    fw.write(observation_1.replace(',', '') + "," + observation_2.replace(',', '') + "," + generated_hypothesis + "," + correct_hypothesis.replace(',', '')+'\n')
+
+fw.close()
 print(np.mean(all_bleus))
 print(np.max(all_bleus))

@@ -1,14 +1,15 @@
-from datasets import load_dataset, Value, Features, load_from_disk
+from datasets import load_dataset, Value, Features, load_from_disk, DatasetDict
 from generation_example import Comet
 import argparse
 
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--comet_model_path', type=str, default="/media/sdc/rohola_data/abduction_checkpoints/comet_checkpoint/comet-atomic_2020_BART")
+parser.add_argument('--art_dataset_path', type=str, default="/media/sdc/rohola_data/art_full")
 parser.add_argument('--save_dataset_path', type=str, default="/media/sdc/rohola_data/abduction_augmented_dataset")
 args = parser.parse_args()
 
-dataset = load_dataset("art")
+dataset = DatasetDict.load_from_disk(args.art_dataset_path)
 
 print("model loading ...")
 #comet = Comet("/home/rohola/codes/text_nlp_hf/text2text_generation/atomic2020_transformer/official/official_checkpoint/comet-atomic_2020_BART")
@@ -42,7 +43,7 @@ observation2_relations = ["isAfter", "xReason", "oEffect", "oReact", "oWant"]
 augmented_dataset = []
 
 def add_relations(example):
-    new_example = {}
+    new_example = example.copy()
     head = example["observation_1"]
     for rel in observation1_relations:
         key = rel.lower()+"_obs1"

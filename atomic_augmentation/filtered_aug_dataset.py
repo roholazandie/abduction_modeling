@@ -66,7 +66,7 @@ def add_selected_relations(example):
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--input_dataset', type=str, default="/media/sdc/rohola_data/abduction_augmented_dataset")
-parser.add_argument('--output_dataset', type=str, default="/media/sdc/rohola_data/filtered_abduction_augmented_dataset")
+parser.add_argument('--output_dataset', type=str, default="/media/sdc/rohola_data/filtered_new_abduction_augmented_dataset")
 args = parser.parse_args()
 
 dataset = DatasetDict.load_from_disk(args.input_dataset)

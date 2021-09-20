@@ -1,0 +1,17 @@
+{
+  "model_checkpoint": "distilbert-base-uncased",
+  "dataset_name": "/media/sdc/rohola_data/filtered_abduction_augmented_dataset",
+  "checkpoint_dir": "/media/sdc/rohola_data/abduction_checkpoints/abduction_nli_checkpoint",
+  "batch_size": 8,
+  "batch_update": 16,
+  "max_sequence_length": 128,
+  "apex_opt_level": "O1",
+  "warmup_steps": 1e2,
+  "num_unfreeze_last_layers": 0,
+  "learning_rate": 2e-5,
+  "num_train_epochs": 3,
+  "weight_decay": 0.0,
+  "device": "cuda:0"
+}
+
+
