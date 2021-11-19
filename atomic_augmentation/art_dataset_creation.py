@@ -46,22 +46,32 @@ def change_type(x):
 
 if __name__ == "__main__":
     # raw_data_path = "/home/rohola/codes/abduction_modeling/data/art_full_raw/"
+    # add_labels_to_alphanli("/home/rohola/codes/abduction_modeling/data/alphanli/train.jsonl", raw_data_path)
     # add_labels_to_alphanli("/home/rohola/codes/abduction_modeling/data/alphanli/dev.jsonl", raw_data_path)
     # add_labels_to_alphanli("/home/rohola/codes/abduction_modeling/data/alphanli/test.jsonl", raw_data_path)
-    # add_labels_to_alphanli("/home/rohola/codes/abduction_modeling/data/alphanli/train.jsonl", raw_data_path)
 
 
-    nlg_dataset = load_dataset('json', data_files={"train": "/home/rohola/codes/abduction_modeling/data/anlg/train-w-comet-preds.jsonl",
-                                             "test": "/home/rohola/codes/abduction_modeling/data/anlg/test-w-comet-preds.jsonl",
-                                             "validation": "/home/rohola/codes/abduction_modeling/data/anlg/dev-w-comet-preds.jsonl"
-                                             })
-    nlg_dataset = nlg_dataset.remove_columns('comet_preds')
-    nlg_dataset = nlg_dataset.rename_column('obs1', 'observation_1')
-    nlg_dataset = nlg_dataset.rename_column('obs2', 'observation_2')
-    nlg_dataset = nlg_dataset.rename_column('hyp1', 'hypothesis_1')
-    nlg_dataset = nlg_dataset.rename_column('hyp2', 'hypothesis_2')
-    nlg_dataset = nlg_dataset.map(change_type)
-    nlg_dataset.save_to_disk("/home/rohola/codes/abduction_modeling/data/nlg_dataset")
+    # nlg_dataset = load_dataset('json', data_files={"train": "/home/rohola/codes/abduction_modeling/data/anlg/train-w-comet-preds.jsonl",
+    #                                          "test": "/home/rohola/codes/abduction_modeling/data/anlg/test-w-comet-preds.jsonl",
+    #                                          "validation": "/home/rohola/codes/abduction_modeling/data/anlg/dev-w-comet-preds.jsonl"
+    #                                          })
+    # nlg_dataset = nlg_dataset.remove_columns('comet_preds')
+    # nlg_dataset = nlg_dataset.rename_column('obs1', 'observation_1')
+    # nlg_dataset = nlg_dataset.rename_column('obs2', 'observation_2')
+    # nlg_dataset = nlg_dataset.rename_column('hyp1', 'hypothesis_1')
+    # nlg_dataset = nlg_dataset.rename_column('hyp2', 'hypothesis_2')
+    # nlg_dataset = nlg_dataset.map(change_type)
+    # nlg_dataset.save_to_disk("/home/rohola/codes/abduction_modeling/data/nlg_dataset")
+    #
+    # x = DatasetDict.load_from_disk("/home/rohola/codes/abduction_modeling/data/nlg_dataset")
 
-    x = DatasetDict.load_from_disk("/home/rohola/codes/abduction_modeling/data/nlg_dataset")
+
+    # nli_dataset = load_dataset('json', data_files={"train": "/home/rohola/codes/abduction_modeling/data/alphanli/train.jsonl",
+    #                                          "test": "/home/rohola/codes/abduction_modeling/data/alphanli/test.jsonl",
+    #                                          "validation": "/home/rohola/codes/abduction_modeling/data/alphanli/dev.jsonl"
+    #                                          })
+    # x = 1
+
+    x = DatasetDict.load_from_disk("/home/rohola/codes/abduction_modeling/data/art_full")
+
     x=1

@@ -1,16 +1,16 @@
 {
-  "model_checkpoint": "distilbert-base-uncased",
-  "dataset_name": "/media/sdc/rohola_data/filtered_abduction_augmented_dataset",
+  "model_checkpoint": "roberta-large",
+  "dataset_name": "/media/sdc/rohola_data/abduction_modeling_datasets/filtered_nli_dataset",
   "checkpoint_dir": "/media/sdc/rohola_data/abduction_checkpoints/abduction_nli_checkpoint",
   "batch_size": 8,
   "batch_update": 16,
   "max_sequence_length": 128,
   "apex_opt_level": "O1",
-  "warmup_steps": 1e2,
+  "warmup_ratio": 0.2,
   "num_unfreeze_last_layers": 0,
-  "learning_rate": 2e-5,
-  "num_train_epochs": 3,
-  "weight_decay": 0.0,
+  "learning_rate": 1e-5,
+  "num_train_epochs": 20,
+  "weight_decay": 1e-2,
   "device": "cuda:0"
 }
 

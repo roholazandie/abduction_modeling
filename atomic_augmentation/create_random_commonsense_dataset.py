@@ -1,12 +1,12 @@
 from datasets import load_dataset, Value, Features, load_from_disk, DatasetDict
 from generation_example import Comet
 import argparse
-
+import random
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--comet_model_path', type=str, default="/media/sdc/rohola_data/abduction_checkpoints/comet_checkpoint/comet-atomic_2020_BART")
-parser.add_argument('--input_dataset_path', type=str, default="/media/sdc/rohola_data/abduction_modeling_datasets/nlg_dataset")
-parser.add_argument('--save_dataset_path', type=str, default="/media/sdc/rohola_data/abduction_modeling_datasets/nlg_augmented_dataset")
+parser.add_argument('--input_dataset_path', type=str, default="/media/sdc/rohola_data/abduction_modeling_datasets/nli_dataset")
+parser.add_argument('--save_dataset_path', type=str, default="/media/sdc/rohola_data/abduction_modeling_datasets/nli_random_commonsense_dataset")
 args = parser.parse_args()
 
 dataset = DatasetDict.load_from_disk(args.input_dataset_path)
@@ -16,35 +16,68 @@ comet = Comet(args.comet_model_path)
 comet.model.zero_grad()
 print("model loaded")
 
-
-columns = ["observation_1",
-           "observation_2",
-           "hypothesis_1",
-           "hypothesis_2",
-           "label",
-           "afters_obs2",
-           "befores_obs1",
-           "causes_obs1",
-           "reason_obs2",
-           "xeffects_obs1",
-           "xreacts_obs1",
-           "xwants_obs1",
-           "xintent_obs1",
-           "oeffect_obs2",
-           "oreact_obs2",
-           "owant_obs2"]
-
-
-observation1_relations = ["isBefore", "Causes", "xEffect", "xReact", "xWant", "xIntent"]
-observation2_relations = ["isAfter", "xReason", "oEffect", "oReact", "oWant"]
-
+all_relations = [
+    "AtLocation",
+    "CapableOf",
+    #"Causes",
+    "CausesDesire",
+    "CreatedBy",
+    "DefinedAs",
+    "DesireOf",
+    "Desires",
+    "HasA",
+    "HasFirstSubevent",
+    "HasLastSubevent",
+    "HasPainCharacter",
+    "HasPainIntensity",
+    "HasPrerequisite",
+    "HasProperty",
+    "HasSubEvent",
+    "HasSubevent",
+    #"HinderedBy",
+    "InheritsFrom",
+    "InstanceOf",
+    "IsA",
+    "LocatedNear",
+    "LocationOfAction",
+    "MadeOf",
+    "MadeUpOf",
+    "MotivatedByGoal",
+    "NotCapableOf",
+    "NotDesires",
+    "NotHasA",
+    "NotHasProperty",
+    "NotIsA",
+    "NotMadeOf",
+    "ObjectUse",
+    "PartOf",
+    "ReceivesAction",
+    "RelatedTo",
+    "SymbolOf",
+    "UsedFor",
+    #"isAfter",
+    #"isBefore",
+    "isFilledBy",
+    #"oEffect",
+    #"oReact",
+    #"oWant",
+    #"xAttr",
+    #"xEffect",
+    #"xIntent",
+    "xNeed",
+    #"xReact",
+    #"xReason",
+    #"xWant",
+]
 
 augmented_dataset = []
+
+random_relations = random.sample(all_relations, 5)
 
 def add_relations(example):
     new_example = example.copy()
     head = example["observation_1"]
-    for rel in observation1_relations:
+    for rel in random_relations:
         key = rel.lower()+"_obs1"
         new_example[key] = []
         queries = []
@@ -55,7 +88,8 @@ def add_relations(example):
 
 
     head = example["observation_2"]
-    for rel in observation2_relations:
+    #random_relations = random.sample(all_relations, 5)
+    for rel in random_relations:
         key = rel.lower()+"_obs2"
         new_example[key] = []
         queries = []

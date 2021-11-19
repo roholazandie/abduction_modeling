@@ -27,7 +27,7 @@ def get_semantic_entailment(sent1, sent2):
 
 
 bleu = load_metric("bleu")
-params = ModelConfig.from_json("abduction_augmented_config.json")
+params = ModelConfig.from_json("abduction_generation_config.json")
 
 SPECIAL_TOKENS = {'pad_token': '[PAD]',
                   'bos_token': '[BOS]',
@@ -52,7 +52,7 @@ all_bleus = []
 fw = open("results_test.csv", 'w')
 fw.write("observation1, observation1, generated hypothesis, real hypothesis\n")
 
-for example in dataset["validation"]:
+for example in dataset["test"]:
     correct_hypothesis = example["hypothesis_"+str(example['label'])]
 
     causes_obs1 = example['selected_causes_obs1'].strip()

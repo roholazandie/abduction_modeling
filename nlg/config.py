@@ -17,6 +17,7 @@ class ModelConfig:
     weight_decay: float
     apex_opt_level: str
     warmup_steps: int
+    warmup_ratio: float
     num_unfreeze_last_layers: int
     device: str
 

@@ -84,7 +84,7 @@ def preprocess_function(examples):
 dataset = DatasetDict.load_from_disk(params.dataset_name)
 
 tokenizer = AutoTokenizer.from_pretrained(params.model_checkpoint, use_fast=True)
-model = AutoModelForPreTraining.from_pretrained(params.model_checkpoint).to(params.device)
+model = AutoModelForPreTraining.from_pretrained(params.model_checkpoint)#.to(params.device)
 
 # model = GPTNeoForCausalLM.from_pretrained("EleutherAI/gpt-neo-1.3B")#.to(params.device)
 # tokenizer = GPT2Tokenizer.from_pretrained("EleutherAI/gpt-neo-1.3B")
@@ -94,20 +94,6 @@ encoded_dataset = dataset.map(preprocess_function)  # , batched=True)
 
 
 model.resize_token_embeddings(len(tokenizer))
-
-
-# args = TrainingArguments(
-#     params.checkpoint_dir,
-#     per_device_train_batch_size=params.batch_size,
-#     per_device_eval_batch_size=params.batch_size,
-#     num_train_epochs=params.num_train_epochs,
-#     weight_decay=0.01,
-#     warmup_steps=100,
-#     logging_dir="/media/sdb4Tb/rohola_data",
-#     logging_steps=5000,
-#     save_steps=5000,
-# )
-
 
 
 args = TrainingArguments(
@@ -123,9 +109,10 @@ args = TrainingArguments(
     load_best_model_at_end=True,
     fp16=True,
     fp16_opt_level=params.apex_opt_level,
-    warmup_steps=params.warmup_steps,
+    #warmup_steps=params.warmup_steps,
+    warmup_ratio=params.warmup_ratio,
     report_to="wandb",
-    run_name="gpt2_newparams2"
+    run_name="nlg_gpt2"
 )
 
 trainer = Trainer(
