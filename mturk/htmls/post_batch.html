@@ -1,0 +1,43 @@
+<script src="https://assets.crowd.aws/crowd-html-elements.js"></script>
+
+<crowd-form>
+<crowd-entity-annotation
+  name="Abduction Reasoning Model Evaluation"
+  header="Mention the generated hypotheses that match the actual hypothesis between Observation 1 and Observation 2"
+  labels="[{'label': 'Observation 1', 'shortDisplayName': 'o1', 'fullDisplayName': 'Observation 1'},
+           {'label': 'Observation 2', 'shortDisplayName': 'o2', 'fullDisplayName': 'Observation 2'},
+           {'label': 'List of Generated Hypotheses', 'shortDisplayName': 'gh', 'fullDisplayName': 'List of Generated Hypotheses separated by a period'},
+           {'label': 'Actual Hypothesis', 'shortDisplayName': 'ah', 'fullDisplayName': 'Actual Hypothesis'}]"
+  text="${OBSERVATION_1}, ${OBSERVATION_2}, ${GENERATED_HYPOTHESES}, ${ACTUAL_HYPOTHESIS}"
+>
+  <full-instructions header="Labeling Instructions">
+    <ol>
+      <li><strong>Read</strong> the generated hypotheses carefully. Each sentence is a hypothesis,
+          and you will see a maximum of three sentences </li>
+      <li><strong>Highlight</strong> the full generated hypothesis sentence if it matches with the actual hjypothesis.</li>
+    </ol>
+    <p>
+        We would like to evaluate a machine learning model's ability to reason based on common sense.
+        More specifically, we would like to see how accurately a model is able to generate a hypothesis of an event that
+        can reasonably occur between two observations - Observation 1 and Observation 2.
+
+        The model has generated a maximum of three hypotheses and we would like the mturk worker (human) to evaluate to
+        tell us which of those hypotheses can be a reasonable hypotheses based on the actual hypothesis.
+    </p>
+  </full-instructions>
+
+  <short-instructions>
+    Abduction Reasoning Model Evaluation
+  </short-instructions>
+
+</crowd-entity-annotation>
+</crowd-form>
+<script>
+  document.addEventListener('all-crowd-elements-ready', () => {
+    document
+      .querySelector('crowd-entity-annotation')
+      .shadowRoot
+      .querySelector('crowd-form')
+      .form;
+  });
+</script>
